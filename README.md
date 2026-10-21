@@ -1,4 +1,11 @@
 # Sistem Informasi Perpustakaan SMK Al-Munawwarah Cilacap
+📚 Tugas Mata Kuliah: Analisis & Pengujian Sistem IF7A
+
+Mata Kuliah: Analisis & Pengujian Sistem
+Ketua Kelompok: Safik Fahreza – 23EO50011
+Anggota:
+- Vaizal Adi Saputra – 23EO50009
+- Safik Fahreza – 23EO50011
 
 **Repository:** https://github.com/rezhazha41/apps-perpus
 
