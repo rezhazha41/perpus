@@ -266,25 +266,3 @@ Demo mencakup alur berikut:
 3. Pengurus meninjau dan menyetujui atau menolak pengajuan.
 4. Pengurus memproses pengembalian sebagian atau penuh.
 5. Pengguna melihat status transaksi yang diperbarui.
-
-**Catatan demo:** gunakan akun dan data sintetis. Jangan tampilkan secret, data siswa nyata, atau berkas bukti pribadi.
-
----
-
-## 9. Pembagian Tugas Kelompok
-
-| Anggota | NIM | Tanggung jawab |
-|---|---|---|
-| [Nama Ketua] | [NIM] | [Contoh: koordinasi dan integrasi proyek] |
-| [Nama Anggota 1] | [NIM] | [Contoh: pengembangan aplikasi Flutter] |
-| [Nama Anggota 2] | [NIM] | [Contoh: database dan pengujian] |
-
----
-
-## 10. Referensi Proyek
-
-- Product Requirements Document: dokumen PRD proyek
-- Dokumentasi arsitektur: `docs/architecture.md`
-- Status implementasi: `docs/PROJECT-STATUS.md`
-- Matriks keterlacakan: `docs/prd-traceability-m3-m5.md`
-- Repository GitHub: https://github.com/rezhazha41/apps-perpus
