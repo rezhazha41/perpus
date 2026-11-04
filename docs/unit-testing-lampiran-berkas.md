@@ -148,7 +148,6 @@ Callback upload langsung melempar `StateError('offline')` untuk mensimulasikan k
 
 Test mengirim satu pengajuan, memanggil `submission.reset()` saat bukti diganti, lalu mengirim lagi. Callback RPC menyimpan key ke `requestKeys`. Hasil `['request-1', 'request-2']` membuktikan reset membuat pengajuan berikutnya menggunakan identitas baru, bukan key/path milik lampiran sebelumnya.
 
-### Cara menjelaskannya saat demo
 
 Pakai pola **Arrange – Act – Assert**:
 
@@ -178,18 +177,6 @@ C:\flutter\bin\flutter.bat test --no-pub
 ```
 
 Catat exit code dan output lengkap yang relevan untuk setiap command. Jika Flutter SDK berada di lokasi lain, gunakan path yang terdeteksi pada mesin tersebut.
-
-## Bukti GitHub: commit atau Pull Request
-
-GitHub menggunakan istilah **Pull Request (PR)**; “Merge Request (MR)” adalah istilah yang umum dipakai layanan Git lain.
-
-Repositori tujuan versi skripsi: [github.com/rezhazha41/perpus](https://github.com/rezhazha41/perpus). Setelah commit dan PR dibuat, cantumkan URL GitHub yang benar-benar dihasilkan pada laporan pengumpulan tugas. Jangan mengisi URL tebakan.
-
-1. Pastikan diff hanya berisi perubahan yang dimaksud dan tidak memuat file rahasia atau data uji pribadi.
-2. Jalankan test terfokus, suite Flutter, analyzer, dan `git diff --check`; cantumkan hasilnya pada deskripsi PR.
-3. Buat commit dengan pesan yang menjelaskan cakupan test.
-4. Push ke repositori/branch yang telah ditentukan pemilik proyek, lalu buat PR GitHub bila diminta.
-Repositori skripsi tersebut terpisah dari repo proyek asli. Pastikan perubahan yang dikirim hanya masuk ke repo skripsi yang benar.
 
 ## Kriteria selesai untuk implementasi test
 
