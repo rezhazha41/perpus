@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="360" viewBox="0 0 1080 360" role="img" aria-labelledby="title desc">
+  <title id="title">Skenario BDD Espresso Perpus</title>
+  <desc id="desc">Given tautan reset, when Android membuka MainActivity, then intent diterima dan FlutterView tampil. Diagram skenario, bukan hasil runtime.</desc>
+  <rect width="1080" height="360" rx="20" fill="#f4f6fa"/>
+  <text x="48" y="58" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#17233b">BDD Android — Espresso</text>
+  <text x="48" y="91" font-family="Arial, sans-serif" font-size="15" fill="#53627a">Skenario host Android untuk aplikasi Perpus</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="48" y="130" width="286" height="150" rx="14" fill="#ffffff" stroke="#c8d2e1" stroke-width="2"/>
+    <text x="72" y="166" font-size="16" font-weight="700" fill="#315ea8">GIVEN</text>
+    <text x="72" y="202" font-size="18" font-weight="700" fill="#17233b">Tautan reset Perpus</text>
+    <text x="72" y="231" font-size="15" fill="#53627a">menjadi intent ACTION_VIEW</text>
+    <text x="72" y="254" font-size="15" fill="#53627a">tanpa OTP atau kredensial.</text>
+    <path d="M346 205h38m-12-12 12 12-12 12" fill="none" stroke="#65748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="397" y="130" width="286" height="150" rx="14" fill="#ffffff" stroke="#c8d2e1" stroke-width="2"/>
+    <text x="421" y="166" font-size="16" font-weight="700" fill="#315ea8">WHEN</text>
+    <text x="421" y="202" font-size="18" font-weight="700" fill="#17233b">Android membuka</text>
+    <text x="421" y="228" font-size="18" font-weight="700" fill="#17233b">MainActivity</text>
+    <text x="421" y="254" font-size="15" fill="#53627a">dengan URI reset tersebut.</text>
+    <path d="M695 205h38m-12-12 12 12-12 12" fill="none" stroke="#65748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="746" y="130" width="286" height="150" rx="14" fill="#ffffff" stroke="#c8d2e1" stroke-width="2"/>
+    <text x="770" y="166" font-size="16" font-weight="700" fill="#315ea8">THEN</text>
+    <text x="770" y="202" font-size="18" font-weight="700" fill="#17233b">URI diterima</text>
+    <text x="770" y="228" font-size="18" font-weight="700" fill="#17233b">FlutterView tampil</text>
+    <text x="770" y="254" font-size="15" fill="#53627a">dicek oleh JUnit + Espresso.</text>
+  </g>
+  <text x="48" y="326" font-family="Arial, sans-serif" font-size="13" fill="#7b3443">Diagram skenario — bukan screenshot hasil runtime Android.</text>
+</svg>

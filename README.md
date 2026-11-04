@@ -266,3 +266,12 @@ Demo mencakup alur berikut:
 3. Pengurus meninjau dan menyetujui atau menolak pengajuan.
 4. Pengurus memproses pengembalian sebagian atau penuh.
 5. Pengguna melihat status transaksi yang diperbarui.
+
+## Tugas Pertemuan 11 — BDD Espresso Android
+
+Lampiran implementasi dan panduan:
+
+- [Panduan skenario, cara menjalankan, dan hasil uji](docs/bdd-espresso-perpus.md)
+- [Source test Espresso](lampiran/espresso/ResetLinkEntryEspressoTest.kt)
+- [Konfigurasi Android test](lampiran/espresso/android-test-setup.gradle.kts)
+- [Diagram skenario BDD](docs/attachments/bdd-espresso-scenario.svg)
