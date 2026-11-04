@@ -6,7 +6,7 @@ Dokumen ini menjelaskan cara menguji fitur lampiran berkas pada aplikasi Perpus 
 
 > Unit Testing Lampiran Berkas (Dokumen, Gambar, Video)
 
-Dokumen ini adalah panduan pengujian, bukan implementasi dukungan lampiran dokumen atau video. Kode serta test yang ada harus diperiksa kembali sebelum pekerjaan implementasi dimulai.
+Dokumen ini adalah panduan pengujian.
 
 ## Status implementasi yang ditemukan
 
