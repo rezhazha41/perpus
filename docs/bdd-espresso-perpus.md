@@ -32,11 +32,15 @@ File: [source test](../lampiran/espresso/ResetLinkEntryEspressoTest.kt). Di apli
 @RunWith(AndroidJUnit4::class)
 class ResetLinkEntryEspressoTest {
     @Test
-    fun givenResetLink_whenAndroidOpensPerpus_thenFlutterHostReceivesLink() {
+    fun givenResetLink_whenAndroidResolvesPerpus_thenFlutterHostReceivesLink() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val resetLink = Uri.parse("https://perpus.smkalmunawwarah.sch.id/reset")
         val intent = Intent(Intent.ACTION_VIEW, resetLink)
-            .setClass(context, MainActivity::class.java)
+            .setPackage(context.packageName)
+        assertEquals(
+            MainActivity::class.java.name,
+            intent.resolveActivity(context.packageManager)?.className,
+        )
 
         ActivityScenario.launch<MainActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
@@ -60,7 +64,8 @@ token, email, atau kata sandi.
 | `@Test` | Mendaftarkan method sebagai satu kasus test. |
 | `Uri.parse(...)` | Membentuk tautan reset tetap untuk fixture. |
 | `Intent.ACTION_VIEW` | Meniru intent pembuka tautan yang dikirim Android. |
-| `setClass(..., MainActivity::class.java)` | Mengirim intent ke host aplikasi; tidak menguji resolver App Links. |
+| `setPackage(context.packageName)` | Menguji filter implicit Android dalam paket uji, tanpa membuka chooser aplikasi lain. |
+| `resolveActivity(...)` | Memastikan filter URI/path paket uji benar-benar mencocokkan tautan. Ini belum menguji verifikasi domain otomatis Android. |
 | `ActivityScenario.launch(...)` | Membuka dan mengelola lifecycle `MainActivity`. |
 | `assertEquals(...)` | Memastikan host menerima URI yang diharapkan. |
 | `onView(...).check(matches(isDisplayed()))` | Memastikan `FlutterView` terlihat memakai Espresso. |
@@ -96,6 +101,8 @@ Jangan memakai konfigurasi default aplikasi yang menunjuk ke server sekolah.
   `:app:compileDebugAndroidTestKotlin -PperpusBddTest=true` dengan dua
   dart-define lokal yang dicantumkan di bawah. Ini hanya membuktikan kode test
   dapat dikompilasi, bukan bahwa assertion sudah berjalan di Android.
+- Metadata manifest hasil konfigurasi mengonfirmasi application ID uji
+  `id.perpus.perpus_mobile.bddtest` dan label `Perpus BDD Uji`.
 - Runtime Espresso **BLOCKED**: `adb devices -l` tidak menampilkan perangkat
   dan `emulator -list-avds` tidak menemukan AVD.
 - Test Flutter yang ada tidak bisa dijalankan pada Windows karena repo tidak

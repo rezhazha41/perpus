@@ -17,11 +17,15 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ResetLinkEntryEspressoTest {
     @Test
-    fun givenResetLink_whenAndroidOpensPerpus_thenFlutterHostReceivesLink() {
+    fun givenResetLink_whenAndroidResolvesPerpus_thenFlutterHostReceivesLink() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val resetLink = Uri.parse("https://perpus.smkalmunawwarah.sch.id/reset")
         val intent = Intent(Intent.ACTION_VIEW, resetLink)
-            .setClass(context, MainActivity::class.java)
+            .setPackage(context.packageName)
+        assertEquals(
+            MainActivity::class.java.name,
+            intent.resolveActivity(context.packageManager)?.className,
+        )
 
         ActivityScenario.launch<MainActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
