@@ -1,0 +1,11 @@
+00:00 +0: loading D:/apps/Perpus/apps/mobile/test/loan_request_evidence_test.dart
+00:00 +0: D:/apps/Perpus/apps/mobile/test/loan_request_submission_test.dart: uploads evidence before RPC and reuses key/path after ambiguous failure
+00:00 +1: D:/apps/Perpus/apps/mobile/test/loan_request_submission_test.dart: does not call the RPC when evidence upload fails
+00:00 +2: D:/apps/Perpus/apps/mobile/test/loan_request_submission_test.dart: new evidence resets the idempotency identity
+00:00 +3: D:/apps/Perpus/apps/mobile/test/loan_request_submission_test.dart: uploads optional attachment before RPC and reuses its path on retry
+00:00 +4: D:/apps/Perpus/apps/mobile/test/loan_request_submission_test.dart: attachment upload failure does not call the RPC
+00:00 +5: D:/apps/Perpus/apps/mobile/test/loan_request_evidence_test.dart: evidence type unlocks camera but photo is still required
+00:02 +6: D:/apps/Perpus/apps/mobile/test/loan_request_evidence_test.dart: accepts a supported PDF attachment within the existing size limit
+00:02 +7: D:/apps/Perpus/apps/mobile/test/loan_request_evidence_test.dart: accepts JPEG and PNG photo attachments by file signature
+00:02 +8: D:/apps/Perpus/apps/mobile/test/loan_request_evidence_test.dart: rejects unsupported, empty, oversized, and mislabeled attachments
+00:02 +9: All tests passed!

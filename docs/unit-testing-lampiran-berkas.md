@@ -1,52 +1,153 @@
-# Unit Testing Lampiran Berkas
+# Implementasi dan Unit Testing Lampiran Pengajuan Perpus
 
-## Tujuan
+Tanggal: 4 November 2026
 
-Dokumen ini menjelaskan cara menguji fitur lampiran berkas pada aplikasi Perpus :
+Lampiran berkas tambahan untuk pengajuan pinjaman bersifat opsional. Selfie atau foto kartu siswa tetap merupakan bukti utama yang wajib. Test menggunakan data sintetis dan callback palsu; tidak membaca foto pribadi, membuka kamera, mengakses jaringan, atau menyentuh Supabase produksi.
 
-> Unit Testing Lampiran Berkas (Dokumen, Gambar, Video)
+## Perubahan implementasi
 
-Dokumen ini adalah panduan pengujian.
+- Anggota dapat memilih satu PDF/JPEG/PNG maksimal 10 MiB. Batas berasal dari bucket `loan-evidence` yang sudah ada. Validasi memeriksa extension, MIME signature, dan ukuran.
+- File masuk ke bucket privat sebelum RPC pengajuan dipanggil. Path deterministik memakai request key. Jika hasil RPC ambigu, retry menggunakan key/path yang sama dan kontrol bukti dikunci agar data yang sudah dicoba tidak diganti menjadi permintaan baru.
+- RPC kandidat membuat metadata idempoten dan menjaga akses anggota/pengurus melalui RLS. Pengurus dapat melihat preview PDF/gambar. Lampiran mengikuti jadwal retensi foto bukti utama.
+- Migrasi `202611040001_optional_loan_attachments.sql` belum diterapkan ke server aktif. Jangan rilis client yang memanggil RPC baru sebelum migrasi disetujui dan diterapkan.
+- Tidak ada dukungan video atau banyak lampiran.
 
-## Status implementasi yang ditemukan
+## Cara menjalankan test fokus
+```powershell
+Set-Location D:\apps\Perpus\apps\mobile
+C:\flutter\bin\flutter.bat test --no-pub test\loan_request_evidence_test.dart test\loan_request_submission_test.dart
+```
+Hasil sesi ini: **PASS 9/9**, exit code 0. Suite Flutter penuh sengaja tidak dijalankan sesuai ruang lingkup tugas.
 
-Pada alur pengajuan pinjaman, lampiran saat ini adalah foto bukti. Pengguna memilih jenis bukti, mengambil foto, aplikasi memeriksa wajah, lalu mengunggah JPEG/PNG ke bucket privat `loan-evidence` sebelum memanggil RPC `submit_loan_request`.
+## Demo dan bukti untuk dosen
 
-Test yang sudah ada:
+1. Tampilkan `loan_request_evidence_test.dart`: pilih “Selfie”; kamera terbuka setelah jenis bukti dipilih, tetapi tombol pengajuan tetap nonaktif karena foto belum diambil. Tunjukkan label “Lampiran tambahan (opsional)”.
+2. Jalankan perintah focused test di atas dan tunjukkan total 9 test lulus.
+3. Jelaskan skenario timeout: upload fake berhasil, RPC pertama memberi timeout, retry tidak upload ulang dan memakai path serta key yang sama.
+4. Jelaskan skenario gagal upload: error diteruskan dan hitungan pemanggilan RPC tetap nol.
+5. Jelaskan validator: PDF/JPEG/PNG lolos bila signature sesuai; file kosong, format lain, isi palsu, dan ukuran di atas 10 MiB ditolak.
 
-- `apps/mobile/test/loan_request_evidence_test.dart`: menguji bahwa pengguna harus memilih jenis bukti sebelum kamera aktif dan foto tetap wajib sebelum pengajuan.
-- `apps/mobile/test/loan_request_submission_test.dart`: menguji upload mendahului RPC, RPC tidak dipanggil ketika upload gagal, retry memakai request key/path yang sama setelah hasil timeout tidak diketahui, dan lampiran baru memulai identitas request baru.
+Bukti gambar yang dilampirkan adalah `docs/unit-testing/evidence/unit-testing-results.jpg`, dibuat dari hasil aktual command di atas (bukan mock). Output teks asli tersimpan di `docs/unit-testing/evidence/flutter-test-output.txt`. Dua file test utuh juga disertakan di `docs/unit-testing/code/`. Repo tugas ini berisi bahan presentasi; jalankan test di repo sumber aplikasi karena checkout ini tidak menyertakan aplikasi Flutter maupun `pubspec.yaml`.
 
-PDF/dokumen dan video belum menjadi format lampiran untuk alur pengajuan pinjaman tersebut. Jangan mengubah test untuk menganggap PDF/video didukung tanpa keputusan produk, validasi ukuran/MIME, dan aturan Storage yang sesuai. Pengujian lintas akun/RLS dan isi bucket adalah integration test, bukan bukti unit test. Implementasi Flutter yang dirujuk berada di repo sumber aplikasi [`apps-perpus`](https://github.com/rezhazha41/apps-perpus); repo skripsi `perpus` adalah repo dokumentasi/tugas yang terpisah.
+## Isi lengkap `loan_request_evidence_test.dart`
+```dart
+import 'dart:typed_data';
 
-## Rencana pengujian
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:perpus_mobile/features/server/loan_request_attachment.dart';
+import 'package:perpus_mobile/features/server/server_shell.dart';
 
-| Area | Perilaku yang diuji | Jenis test |
-|---|---|---|
-| Pemilihan | Kamera diblokir sebelum jenis bukti dipilih; pembatalan kamera tidak mengirim pengajuan | Widget |
-| Validasi gambar | Format yang diizinkan diterima; format lain dan berkas kosong/terlalu besar ditolak jika batas tersebut memang ditetapkan | Unit |
-| Urutan operasi | Berkas berhasil diunggah sebelum RPC dibuat | Unit dengan fake |
-| Kegagalan | Upload gagal berarti RPC tidak dipanggil dan UI tidak menyatakan berhasil | Unit/widget |
-| Timeout ambigu | Retry manual memakai request key dan object path yang sama; tidak membuat mutasi kedua | Unit |
-| Lampiran baru | Mengganti foto mereset identitas request sesuai alur sekarang | Unit |
-| Otorisasi Storage | Anon/anggota lain ditolak; pemilik dan pengurus mendapat akses sesuai policy | Integration pada Supabase disposable |
-| Format dokumen/video | Hanya diuji jika fitur tersebut sudah disetujui dan benar-benar didukung end-to-end | Unit + integration |
+void main() {
+  testWidgets('evidence type unlocks camera but photo is still required', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MemberLoanRequestPage(
+          copy: {
+            'id': 'test-copy',
+            'code': 'TEST-01',
+            'books': {'id': 'test-book', 'title': 'Buku uji'},
+          },
+        ),
+      ),
+    );
+    final camera = find.widgetWithText(
+      OutlinedButton,
+      'Pilih jenis bukti terlebih dahulu',
+    );
+    expect(tester.widget<OutlinedButton>(camera).onPressed, isNull);
+    await tester.tap(find.text('Selfie'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.widgetWithText(OutlinedButton, 'Ambil foto bukti'),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Ajukan pinjaman'),
+          )
+          .onPressed,
+      isNull,
+    );
+    expect(find.text('Pinjam sekarang'), findsNothing);
+    expect(find.text('Lampiran tambahan (opsional)'), findsOneWidget);
+    expect(
+      find.textContaining('Foto bukti selfie/kartu tetap wajib.'),
+      findsOneWidget,
+    );
+  });
 
-Batas ukuran dan tipe MIME tidak boleh ditebak. Sebelum menambah pengujian ukuran atau PDF/video, cari batas yang berlaku di PRD, konfigurasi Storage, migrasi, dan UI. Bila belum ditetapkan, dokumentasikan sebagai keputusan yang diperlukan, bukan membuat angka produk baru.
+  test('accepts a supported PDF attachment within the existing size limit', () {
+    final bytes = Uint8List(LoanRequestAttachment.maxBytes)
+      ..setRange(0, 5, '%PDF-'.codeUnits);
+    final attachment = LoanRequestAttachment.parse(
+      name: 'dokumen-uji.pdf',
+      bytes: bytes,
+    );
 
-## Cara implementasi bertahap
+    expect(attachment.contentType, 'application/pdf');
+    expect(attachment.bytes, hasLength(LoanRequestAttachment.maxBytes));
+  });
 
-1. Periksa widget, helper, konfigurasi bucket, RPC, dan test yang ada. Pertahankan perilaku pengajuan: upload sukses harus terjadi sebelum RPC.
-2. Tentukan kontrak lampiran yang memang didukung. Untuk alur sekarang, kontraknya adalah foto bukti JPEG/PNG; jangan menambahkan PDF/video secara diam-diam.
-3. Tambahkan atau sesuaikan test yang gagal terlebih dahulu untuk bug/perilaku yang akan dikerjakan. Gunakan fake callback/repository agar unit test tidak mengakses jaringan, Supabase aktif, kamera, atau file pribadi.
-4. Implementasikan perubahan terkecil di helper/use case yang sudah ada. Hindari memindahkan seluruh logika server shell hanya demi test.
-5. Jalankan test terfokus, seluruh test Flutter, analyzer, dan `git diff --check`. Untuk policy Storage/RLS gunakan stack disposable yang isolasinya sudah dibuktikan; unit test tidak membuktikan RLS runtime.
-6. Catat hasil aktual. Jangan memasukkan foto siswa, OTP, token, atau data akun ke fixture, screenshot, log, maupun commit.
+  test('accepts JPEG and PNG photo attachments by file signature', () {
+    expect(
+      LoanRequestAttachment.parse(
+        name: 'foto.JPG',
+        bytes: Uint8List.fromList([0xff, 0xd8, 0xff, 0xd9]),
+      ).contentType,
+      'image/jpeg',
+    );
+    expect(
+      LoanRequestAttachment.parse(
+        name: 'foto.png',
+        bytes: Uint8List.fromList([137, 80, 78, 71, 13, 10, 26, 10]),
+      ).contentType,
+      'image/png',
+    );
+  });
 
-## Isi lengkap unit test pengajuan bukti
+  test('rejects unsupported, empty, oversized, and mislabeled attachments', () {
+    expect(
+      () => LoanRequestAttachment.parse(
+        name: 'video.mp4',
+        bytes: Uint8List.fromList([1, 2, 3]),
+      ),
+      throwsFormatException,
+    );
+    expect(
+      () =>
+          LoanRequestAttachment.parse(name: 'kosong.pdf', bytes: Uint8List(0)),
+      throwsFormatException,
+    );
+    expect(
+      () => LoanRequestAttachment.parse(
+        name: 'terlalu-besar.pdf',
+        bytes: Uint8List(LoanRequestAttachment.maxBytes + 1),
+      ),
+      throwsFormatException,
+    );
+    expect(
+      () => LoanRequestAttachment.parse(
+        name: 'palsu.pdf',
+        bytes: Uint8List.fromList('bukan pdf'.codeUnits),
+      ),
+      throwsFormatException,
+    );
+  });
+}
 
-Berikut isi lengkap `apps/mobile/test/loan_request_submission_test.dart` pada repo sumber aplikasi:
+```
 
+## Isi lengkap `loan_request_submission_test.dart`
 ```dart
 import 'dart:async';
 
@@ -66,7 +167,7 @@ void main() {
         memberId: 'member-a',
         extension: 'jpg',
         uploadEvidence: (path) async => events.add('upload:$path'),
-        createRequest: (key, path) async {
+        createRequest: (key, path, _) async {
           events.add('rpc:$key:$path');
           if (++rpcCalls == 1) throw TimeoutException('response unknown');
         },
@@ -74,6 +175,7 @@ void main() {
 
       await expectLater(send(), throwsA(isA<TimeoutException>()));
       expect(submission.evidenceUploaded, isTrue);
+      expect(submission.requestAttempted, isTrue);
       await send();
 
       expect(events, [
@@ -94,7 +196,7 @@ void main() {
         memberId: 'member-a',
         extension: 'jpg',
         uploadEvidence: (_) async => throw StateError('offline'),
-        createRequest: (_, _) async => rpcCalls++,
+        createRequest: (_, _, _) async => rpcCalls++,
       ),
       throwsA(isA<StateError>()),
     );
@@ -112,77 +214,99 @@ void main() {
       memberId: 'member-a',
       extension: 'jpg',
       uploadEvidence: (_) async {},
-      createRequest: (key, _) async => requestKeys.add(key),
+      createRequest: (key, _, _) async => requestKeys.add(key),
     );
 
     await send();
     submission.reset();
+    expect(submission.requestAttempted, isFalse);
     await send();
 
     expect(requestKeys, ['request-1', 'request-2']);
   });
+
+  test('uploads optional attachment before RPC and reuses its path on retry', () async {
+    final submission = LoanRequestSubmission(() => 'request-1');
+    final events = <String>[];
+    var rpcCalls = 0;
+
+    Future<void> send() => submission.submit(
+      memberId: 'member-a',
+      extension: 'jpg',
+      uploadEvidence: (path) async => events.add('evidence:$path'),
+      attachmentExtension: 'pdf',
+      uploadAttachment: (path) async => events.add('attachment:$path'),
+      createRequest: (key, evidencePath, attachmentPath) async {
+        events.add('rpc:$key:$evidencePath:$attachmentPath');
+        if (++rpcCalls == 1) throw TimeoutException('response unknown');
+      },
+    );
+
+    await expectLater(send(), throwsA(isA<TimeoutException>()));
+    await send();
+
+    expect(events, [
+      'evidence:member-a/request-1.jpg',
+      'attachment:member-a/request-1-attachment.pdf',
+      'rpc:request-1:member-a/request-1.jpg:member-a/request-1-attachment.pdf',
+      'rpc:request-1:member-a/request-1.jpg:member-a/request-1-attachment.pdf',
+    ]);
+  });
+
+  test('attachment upload failure does not call the RPC', () async {
+    final submission = LoanRequestSubmission(() => 'request-1');
+    var rpcCalls = 0;
+
+    await expectLater(
+      submission.submit(
+        memberId: 'member-a',
+        extension: 'jpg',
+        uploadEvidence: (_) async {},
+        attachmentExtension: 'pdf',
+        uploadAttachment: (_) async => throw StateError('offline'),
+        createRequest: (_, _, _) async => rpcCalls++,
+      ),
+      throwsA(isA<StateError>()),
+    );
+
+    expect(rpcCalls, 0);
+  });
 }
+
 ```
 
-### Penjelasan import dan susunan test
+## Cara membaca test
 
-- `import 'dart:async';` menyediakan `TimeoutException`, yang dipakai untuk meniru kondisi server menerima request tetapi jawaban tidak sampai ke aplikasi.
-- `flutter_test.dart` menyediakan fungsi test dan assertion seperti `test`, `expect`, `expectLater`, `throwsA`, serta `isA`.
-- `loan_request_submission.dart` adalah unit produksi yang sedang diuji. Test memanggil unit ini langsung, bukan widget, kamera, Supabase, atau jaringan sungguhan.
-- `void main()` adalah titik kumpul test yang ditemukan dan dijalankan Flutter Test.
-- Setiap `test(...)` adalah satu skenario terpisah. Fungsi `() async { ... }` membuat skenario bisa menunggu operasi `Future`.
-- `LoanRequestSubmission(() => 'request-...')` diberi pembangkit ID buatan agar hasil stabil dan mudah dibandingkan. Test tidak membuat ID acak atau transaksi nyata.
-- Callback `uploadEvidence` dan `createRequest` adalah pengganti (fake) untuk dua efek eksternal: unggah file dan membuat pengajuan. Karena callback berada dalam kendali test, urutan, jumlah pemanggilan, dan kegagalannya dapat diperiksa.
+### `loan_request_evidence_test.dart`
 
-### Test 1: urutan upload dan retry setelah timeout ambigu
+- `Uint8List` membentuk bytes dummy, sehingga test tidak memakai file pengguna.
+- `LoanRequestAttachment.parse` diuji untuk signature PDF, JPEG, PNG, batas 10 MiB, file kosong, ekstensi/isi tidak cocok, dan format yang tidak didukung.
+- Widget test merender form dengan buku sintetis. Setelah jenis foto dipilih, tombol kamera aktif. Tanpa hasil foto, tombol “Ajukan pinjaman” tetap nonaktif. Test memastikan lampiran hanya tambahan dan foto utama tetap wajib.
 
-Test pertama memastikan upload terjadi sebelum RPC. Fungsi lokal `send()` menjalankan submit dengan callback palsu. Callback upload menambahkan peristiwa `upload:<path>` ke `events`. Callback RPC menambahkan `rpc:<key>:<path>` dan melempar `TimeoutException` hanya pada pemanggilan pertama.
+### `loan_request_submission_test.dart`
 
-`expectLater(send(), throwsA(isA<TimeoutException>()))` memastikan kegagalan pertama benar-benar diteruskan. Setelah itu `evidenceUploaded` harus `true`, sebab upload selesai sebelum respons RPC timeout. Pemanggilan `send()` kedua mensimulasikan retry manual. Assertion pada `events` memastikan upload tidak diulang, sedangkan RPC kedua memakai key dan path yang sama. `expect(nextKey, 1)` membuktikan retry tidak membuat key baru. Ini menguji perlindungan dari duplikasi berdasarkan idempotency key; test ini sendiri tidak menghubungi atau membuktikan perilaku server.
+- `LoanRequestSubmission` menjaga request key, evidence path, attachment path, dan state upload.
+- Callback upload dan RPC adalah fake; daftar `events` membuktikan urutan, tanpa Supabase/network.
+- Timeout setelah RPC pertama meniru hasil server yang belum diketahui. Test memastikan retry tidak upload ulang serta menggunakan key/path yang sama.
+- `requestAttempted` memastikan perubahan bukti/lampiran dikunci setelah mutasi dicoba. Ini mencegah pengguna membuat request key baru untuk transaksi yang hasilnya ambigu.
+- Test kegagalan upload memastikan RPC tidak dipanggil. Test `reset` memastikan bukti baru sebelum percobaan RPC mendapat key baru.
 
-### Test 2: upload gagal menghentikan pengajuan
+## Hasil dan batas verifikasi
 
-Callback upload langsung melempar `StateError('offline')` untuk mensimulasikan kegagalan jaringan. Callback RPC menaikkan `rpcCalls` jika dipanggil. `expectLater(... throwsA(isA<StateError>()))` memastikan error upload tidak ditelan. `expect(rpcCalls, 0)` memastikan pengajuan tidak diteruskan, dan `evidenceUploaded` tetap `false` supaya status unit tidak menyatakan file telah tersimpan.
+- `flutter test --no-pub test/loan_request_evidence_test.dart test/loan_request_submission_test.dart`: **PASS 9/9**, exit 0.
+- `flutter analyze --no-pub` pada lima file yang berubah: **PASS**, exit 0.
+- `node --test supabase/functions/evidence-retention/processor.test.mjs`: **PASS 6/6**.
+- `node scripts/sql-tests/test.mjs`: **PASS** dengan PGlite. Ini bukan bukti Supabase/Storage runtime atau multi-connection.
+- `git diff --check`: **PASS**, exit 0.
+- Seluruh Flutter suite, perangkat Android, runtime Storage/RLS, dan penerapan migrasi: **NOT RUN**.
 
-### Test 3: bukti baru mendapat identitas baru
+Unit test tidak membuktikan file picker/preview pada perangkat, layanan Supabase nyata, RLS runtime, atau penerapan migrasi. Perubahan hanya lokal; belum commit/push. Jika nanti diunggah sebagai tugas, tujuan yang ditentukan adalah repo skripsi `https://github.com/rezhazha41/perpus`, bukan repo aplikasi sumber.
 
-Test mengirim satu pengajuan, memanggil `submission.reset()` saat bukti diganti, lalu mengirim lagi. Callback RPC menyimpan key ke `requestKeys`. Hasil `['request-1', 'request-2']` membuktikan reset membuat pengajuan berikutnya menggunakan identitas baru, bukan key/path milik lampiran sebelumnya.
+## Berkas unit testing yang disertakan
 
+- docs/unit-testing/code/loan_request_evidence_test.dart: salinan utuh test widget dan validasi lampiran dari aplikasi sumber.
+- docs/unit-testing/code/loan_request_submission_test.dart: salinan utuh test urutan upload, kegagalan upload, dan retry pengajuan.
+- docs/unit-testing/evidence/unit-testing-results.jpg: gambar hasil aktual, 9 dari 9 test PASS.
+- docs/unit-testing/evidence/flutter-test-output.txt: keluaran teks command test yang dijalankan.
 
-Pakai pola **Arrange – Act – Assert**:
-
-1. **Arrange (siapkan):** buat `LoanRequestSubmission`, penghitung, daftar peristiwa, dan callback palsu.
-2. **Act (jalankan):** panggil `submit()` atau `reset()` sesuai skenario.
-3. **Assert (buktikan):** gunakan `expect` untuk memeriksa error, jumlah panggilan RPC, status upload, urutan operasi, dan penggunaan key/path.
-
-Contoh kalimat: “Test ini mensimulasikan upload yang gagal. Saya memastikan error muncul, RPC tidak terpanggil, dan status bukti tidak berubah menjadi berhasil. Jadi test tidak membutuhkan foto sungguhan atau koneksi ke server.”
-
-Contoh ini menguji perilaku unit `LoanRequestSubmission`; ia tidak menguji koneksi Storage sungguhan, policy RLS, kamera, atau apakah file di server benar-benar dapat dibaca.
-
-Test widget yang sudah ada memakai pola serupa:
-
-- **Arrange:** render `MemberLoanRequestPage` dengan buku sintetis.
-- **Act:** periksa tombol, pilih “Selfie”, lalu render ulang.
-- **Assert:** tombol kamera aktif, tombol pengajuan tetap nonaktif sebelum foto dipilih, dan label alur pinjam lama tidak muncul.
-
-## Menjalankan test
-
-Dari PowerShell:
-
-```powershell
-Set-Location D:\apps\Perpus\apps\mobile
-C:\flutter\bin\flutter.bat test --no-pub test\loan_request_evidence_test.dart test\loan_request_submission_test.dart
-C:\flutter\bin\flutter.bat analyze --no-pub
-C:\flutter\bin\flutter.bat test --no-pub
-```
-
-Catat exit code dan output lengkap yang relevan untuk setiap command. Jika Flutter SDK berada di lokasi lain, gunakan path yang terdeteksi pada mesin tersebut.
-
-## Kriteria selesai untuk implementasi test
-
-- Test menguji perilaku lampiran yang benar-benar didukung produk.
-- Kegagalan upload tidak membuat RPC atau menampilkan sukses palsu.
-- Retry setelah hasil ambigu tidak menggandakan pengajuan.
-- Unit test tidak menyentuh server produksi atau memakai berkas pribadi.
-- Dukungan format dan batas ukuran berasal dari kontrak yang disetujui dan cocok dengan kebijakan Storage.
-- Hasil test, analyzer, dan pemeriksaan diff dicatat; link commit/PR hanya dicantumkan setelah benar-benar dibuat.
+File test disalin sebagai bahan tugas dan pembacaan kode. Test dijalankan dari repo aplikasi pps-perpus, bukan dari repo dokumentasi perpus.
