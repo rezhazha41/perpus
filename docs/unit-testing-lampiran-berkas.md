@@ -2,7 +2,7 @@
 
 ## Tujuan
 
-Dokumen ini menjelaskan cara menguji fitur lampiran berkas pada aplikasi Perpus dan cara menyiapkan bukti commit atau Pull Request GitHub untuk tugas:
+Dokumen ini menjelaskan cara menguji fitur lampiran berkas pada aplikasi Perpus :
 
 > Unit Testing Lampiran Berkas (Dokumen, Gambar, Video)
 
