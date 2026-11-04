@@ -275,3 +275,5 @@ Lampiran implementasi dan panduan:
 - [Source test Espresso](lampiran/espresso/ResetLinkEntryEspressoTest.kt)
 - [Konfigurasi Android test](lampiran/espresso/android-test-setup.gradle.kts)
 - [Diagram skenario BDD](docs/attachments/bdd-espresso-scenario.svg)
+- [Screenshot hasil BDD di itel A665L](docs/attachments/bdd-espresso-hasil-itel-a665l.png)
+- [Report XML hasil Espresso](docs/attachments/bdd-espresso-results-itel-a665l.xml)

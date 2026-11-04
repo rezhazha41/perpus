@@ -90,28 +90,33 @@ Untuk menjalankan assertion pada perangkat yang sudah tersambung, jalankan:
 & .\gradlew.bat :app:connectedDebugAndroidTest -PperpusBddTest=true -Pdart-defines="$url,$key"
 ```
 
-Setelah command, hasil lulus harus menunjukkan `ResetLinkEntryEspressoTest` dan
-exit code `0`. Kegagalan koneksi ke `127.0.0.1:1` dari banner koneksi bukan
-kegagalan Espresso; test hanya lulus bila assertion URI dan Flutter host lulus.
-Jangan memakai konfigurasi default aplikasi yang menunjuk ke server sekolah.
+Setelah command, hasil lulus harus menunjukkan `ResetLinkEntryEspressoTest`,
+`1/1 completed`, dan exit code `0`. Kegagalan koneksi ke `127.0.0.1:1` dari
+banner aplikasi bukan kegagalan Espresso; test hanya lulus bila assertion URI
+dan Flutter host lulus. Jangan memakai konfigurasi default aplikasi yang
+menunjuk ke server sekolah.
 
 ## Hasil pada sesi ini
 
-- Kompilasi source instrumentation Espresso **PASS**, exit code `0`:
-  `:app:compileDebugAndroidTestKotlin -PperpusBddTest=true` dengan dua
-  dart-define lokal yang dicantumkan di bawah. Ini hanya membuktikan kode test
-  dapat dikompilasi, bukan bahwa assertion sudah berjalan di Android.
-- Metadata manifest hasil konfigurasi mengonfirmasi application ID uji
-  `id.perpus.perpus_mobile.bddtest` dan label `Perpus BDD Uji`.
-- Runtime Espresso **BLOCKED**: `adb devices -l` tidak menampilkan perangkat
-  dan `emulator -list-avds` tidak menemukan AVD.
-- Test Flutter yang ada tidak bisa dijalankan pada Windows karena repo tidak
-  memiliki Windows desktop project. Itu bukan hasil test Android.
-- Belum ada bukti runtime Espresso PASS dan belum ada screenshot perangkat.
+- Runtime Espresso **PASS**, exit code `0`, pada **itel A665L / Android 13**:
+  `:app:connectedDebugAndroidTest -PperpusBddTest=true` dengan URL loopback
+  inert dan publishable key sintetis lokal. Satu test berjalan, nol gagal,
+  nol dilewati; assertion selesai dalam 19.145 detik.
+- Test yang lulus:
+  `givenResetLink_whenAndroidResolvesPerpus_thenFlutterHostReceivesLink`.
+- Report XML: [hasil mesin Espresso](attachments/bdd-espresso-results-itel-a665l.xml).
+- Screenshot report runtime: [hasil Espresso pada itel A665L](attachments/bdd-espresso-hasil-itel-a665l.png).
+- Percobaan pertama gagal sebelum pemasangan karena versi AndroidX Test pada
+  debug dan instrumentation berbeda. Versi dependency disamakan; build
+  berikutnya dan test perangkat lulus.
+- Varian memakai application ID `id.perpus.perpus_mobile.bddtest`; paket
+  Perpus utama tidak diganti atau dihapus. Test tidak login, mengirim OTP,
+  mengganti password, atau mengubah data backend.
 
 ## Bukti untuk lampiran tugas
 
-Gunakan screenshot terminal setelah menjalankan perintah di perangkat Android
-uji. Screenshot harus memperlihatkan nama test dan ringkasan `1 passed`, tanpa
-menampilkan OTP, password, token, atau akun nyata. Screenshot source code dapat
-menjadi lampiran penjelasan, tetapi bukan bukti test runtime.
+Screenshot hasil runtime tersedia pada
+[lampiran PNG](attachments/bdd-espresso-hasil-itel-a665l.png). Gambar dibuat
+dari report HTML Gradle yang berasal dari instrumented run pada perangkat;
+report XML menjadi bukti mesin yang menyertainya. Diagram BDD dan screenshot
+source code adalah penjelas, bukan pengganti hasil runtime.

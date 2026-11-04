@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="1" failures="0" errors="0" skipped="0" time="22.936" timestamp="2026-11-04T04:54:52" hostname="localhost">
+  <testsuite name="id.perpus.perpus_mobile.ResetLinkEntryEspressoTest" tests="1" failures="0" errors="0" skipped="0" time="19.145" timestamp="2026-11-04T04:54:52" hostname="localhost">
+    <properties>
+      <property name="device" value="itel A665L - 13" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="givenResetLink_whenAndroidResolvesPerpus_thenFlutterHostReceivesLink" classname="id.perpus.perpus_mobile.ResetLinkEntryEspressoTest" time="19.145" />
+  </testsuite>
+</testsuites>
